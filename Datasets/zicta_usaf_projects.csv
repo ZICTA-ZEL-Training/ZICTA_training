@@ -1,0 +1,31 @@
+project_id,project_name,province,district,latitude,longitude,budget_usd,start_year,status,target_population
+USAF001,Kasama Digital Hub,Northern,Kasama,-10.22,31.18,285000,2021,Completed,8400
+USAF002,Mbala Connectivity Extension,Northern,Mbala,-8.84,31.37,195000,2022,Ongoing,5200
+USAF003,Mporokoso Community Centre,Northern,Mporokoso,-9.37,30.12,320000,2020,Completed,9800
+USAF004,Luwingu Rural Broadband,Northern,Luwingu,-10.20,29.92,415000,2023,Ongoing,12300
+USAF005,Kaputa Last-Mile Access,Northern,Kaputa,-8.35,29.68,510000,2023,Planned,15700
+USAF006,Mansa Community Digital Hub,Luapula,Mansa,-11.20,28.89,375000,2021,Completed,10200
+USAF007,Nchelenge Connectivity Project,Luapula,Nchelenge,-9.35,28.74,420000,2022,Ongoing,12300
+USAF008,Kawambwa ICT Centre,Luapula,Kawambwa,-9.80,29.08,245000,2020,Completed,7400
+USAF009,Samfya Rural Access,Luapula,Samfya,-11.36,29.55,530000,2023,Ongoing,16800
+USAF010,Nchelenge North Extension,Luapula,Nchelenge,-9.15,28.85,180000,2024,Planned,5400
+USAF011,Mongu Digital Access Programme,Western,Mongu,-15.27,23.15,680000,2022,Ongoing,21500
+USAF012,Kaoma Rural Connectivity,Western,Kaoma,-14.78,24.80,315000,2021,Completed,9200
+USAF013,Senanga Community Hub,Western,Senanga,-15.97,23.27,295000,2020,Completed,8700
+USAF014,Kalabo Last-Mile Project,Western,Kalabo,-14.97,22.67,580000,2023,Ongoing,17900
+USAF015,Limulunga Rural Broadband,Western,Limulunga,-15.15,23.00,465000,2024,Planned,14200
+USAF016,Chinsali ICT Centre,Muchinga,Chinsali,-10.55,32.07,175000,2021,Completed,4800
+USAF017,Isoka Digital Hub,Muchinga,Isoka,-10.15,32.63,245000,2022,Ongoing,7100
+USAF018,Nakonde Border Connectivity,Muchinga,Nakonde,-9.37,32.75,310000,2020,Completed,9300
+USAF019,Mpika Rural Extension,Muchinga,Mpika,-11.90,31.45,390000,2023,Ongoing,11600
+USAF020,Lundazi Digital Access,Eastern,Lundazi,-12.29,33.18,255000,2023,Planned,7600
+USAF021,Petauke Community Hub,Eastern,Petauke,-14.25,31.33,310000,2022,Ongoing,9500
+USAF022,Chadiza Rural Connectivity,Eastern,Chadiza,-14.07,32.43,185000,2021,Completed,5600
+USAF023,Serenje Digital Centre,Central,Serenje,-13.23,30.24,220000,2022,Completed,6500
+USAF024,Mkushi Rural Broadband,Central,Mkushi,-13.62,29.40,285000,2023,Ongoing,8600
+USAF025,Mumbwa Last-Mile Access,Central,Mumbwa,-14.98,27.06,165000,2024,Planned,4900
+USAF026,Kasempa Connectivity,North-Western,Kasempa,-13.47,25.83,340000,2022,Ongoing,10200
+USAF027,Mwinilunga Rural Hub,North-Western,Mwinilunga,-11.74,24.43,275000,2021,Completed,8300
+USAF028,Siavonga Rural Access,Southern,Siavonga,-16.54,28.72,195000,2023,Ongoing,5900
+USAF029,Masaiti Rural Connectivity,Copperbelt,Masaiti,-13.20,28.37,145000,2022,Completed,4300
+USAF030,Luangwa District Access,Lusaka,Luangwa,-15.30,30.25,195000,2023,Planned,5800

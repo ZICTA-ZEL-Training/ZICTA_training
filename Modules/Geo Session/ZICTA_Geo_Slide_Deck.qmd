@@ -1,0 +1,867 @@
+---
+title: "Geospatial Analysis with R"
+subtitle: "Mapping ZICTA's ICT Landscape"
+author: "Matteo Larrode | International Growth Centre"
+date: "2026"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    chalkboard: false
+    code-line-numbers: false
+    highlight-style: github
+    fig-align: center
+    self-contained: true
+    footer: "ZICTA R Training Programme — Spatial Data Analysis Session"
+    css: |
+      .reveal h1, .reveal h2 { color: #1a3a5c; }
+      .reveal .slide-number { color: #888; }
+      .reveal blockquote { border-left: 4px solid #1a3a5c; padding-left: 1em; color: #444; }
+      .zicta-box { background: #eaf2fb; border-left: 4px solid #1a3a5c; padding: 0.8em 1em; border-radius: 4px; margin: 0.5em 0; }
+      .warn-box { background: #fef9e7; border-left: 4px solid #f39c12; padding: 0.8em 1em; border-radius: 4px; margin: 0.5em 0; }
+execute:
+  echo: true
+  warning: false
+  message: false
+  cache: false
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(sf)
+library(geodata)
+library(leaflet)
+library(leaflet.extras)
+library(RColorBrewer)
+library(viridis)
+library(htmltools)
+
+# Load and prepare all data used in slides
+zmb_provinces <- st_as_sf(gadm("ZMB", level = 1, path = tempdir()))
+coverage  <- read_csv("../../Datasets/zicta_coverage_by_province.csv")
+towers    <- read_csv("../../Datasets/zicta_towers.csv")
+usaf      <- read_csv("../../Datasets/zicta_usaf_projects.csv")
+
+provinces_mapped <- zmb_provinces |>
+  left_join(coverage, by = c("NAME_1" = "province"))
+
+towers_sf <- towers |>
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+operator_colours <- colorFactor(
+  palette = c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00"),
+  domain  = towers_sf$operator
+)
+
+pal_internet <- colorNumeric("plasma", provinces_mapped$internet_penetration_pct,
+                             reverse = TRUE)
+```
+
+# Geospatial Analysis with R {background-color="#1a3a5c"}
+
+**Mapping ZICTA's ICT Landscape**
+
+ZICTA R Training Programme | Spatial Data Analysis Session
+
+---
+
+## Today's Session
+
+::: columns
+::: {.column width="55%"}
+**What we will build:**
+
+1. Province-level choropleth maps
+2. Interactive operator infrastructure maps
+3. Spatial joins to identify coverage gaps
+4. A capstone map for your functional group
+
+**By the end of today:**
+You will produce publication-ready maps directly usable in ZICTA's Annual Report.
+:::
+
+::: {.column width="45%"}
+**Session structure:**
+
+| Time | Topic |
+|------|-------|
+| 0:00 | Spatial data fundamentals |
+| 0:45 | Province choropleth |
+| 1:45 | Interactive leaflet maps |
+| 2:45 | Spatial joins |
+| 3:30 | Capstone exercise |
+:::
+:::
+
+---
+
+# Why Geospatial Analysis? {background-color="#1a3a5c"}
+
+**The gap in ZICTA's reporting**
+
+---
+
+## What ZICTA's Annual Report Currently Shows
+
+> "Internet penetration in rural areas remains significantly lower than urban areas, with notable disparities across provinces."
+
+::: {.zicta-box}
+**The data exists.** ZICTA collects coverage rates, subscription counts, and infrastructure locations across all 10 provinces and 116 districts.
+
+**But the spatial dimension is absent** — this information is presented only in tables.
+:::
+
+---
+
+## Three Regulatory Questions a Map Can Answer
+
+::: columns
+::: {.column width="33%"}
+**1. Where are the gaps?**
+
+Which provinces have the lowest internet penetration and mobile coverage?
+:::
+::: {.column width="33%"}
+**2. Is USAF reaching the right places?**
+
+Are Universal Service Access Fund investments targeting the most underserved areas?
+:::
+::: {.column width="33%"}
+**3. Which areas need infrastructure?**
+
+Where are tower density and broadband access both low enough to warrant regulatory intervention?
+:::
+:::
+
+---
+
+## What We Will Produce Today
+
+:::: columns
+::: {.column width="50%"}
+**Static maps (ggplot2)**
+
+- Province choropleth of internet penetration
+- Faceted comparison of multiple indicators
+- Priority province identification
+:::
+::: {.column width="50%"}
+**Interactive maps (leaflet)**
+
+- Zoom, pan, click
+- Operator layer toggles
+- Hover labels and popup details
+:::
+::::
+
+> A map is not a decoration. It is an analytical argument about where something is and why it matters.
+
+---
+
+## Prerequisites and Data
+
+**What you already know:** `dplyr`, `ggplot2`, `left_join()`, `pivot_longer()`
+
+**New packages today:**
+
+| Package | Purpose |
+|---------|---------|
+| `sf` | Read, transform, and analyse spatial data |
+| `geodata` | Download Zambia boundaries directly in R |
+| `leaflet` | Interactive browser-based maps |
+
+**Datasets (all loaded in setup):**
+
+- `zicta_coverage_by_province.csv` — 10 provinces, 4 indicators
+- `zicta_towers.csv` — 72 licensed tower locations, 4 operators
+- `zicta_usaf_projects.csv` — 30 USAF project locations and budgets
+
+---
+
+# Spatial Data Fundamentals {background-color="#1a3a5c"}
+
+**sf objects, CRS, and your first map**
+
+---
+
+## sf Objects Are Just Data Frames
+
+```{r show-class}
+class(zmb_provinces)
+```
+
+```{r glimpse-sf, echo=TRUE, eval=FALSE}
+glimpse(zmb_provinces)
+```
+
+```{r show-geometry, echo=FALSE}
+zmb_provinces |>
+  select(NAME_1, COUNTRY) |>
+  head(3)
+```
+
+::: {.zicta-box}
+The `geometry` column holds the polygon shapes. Every `dplyr` verb you know — `filter()`, `mutate()`, `left_join()` — works on sf objects. The geometry column is **sticky**: it follows the data even when you don't select it.
+:::
+
+---
+
+## What Is a Coordinate Reference System?
+
+::: columns
+::: {.column width="50%"}
+**EPSG:4326 — WGS84**
+
+- Units: **degrees** of latitude/longitude
+- The GPS standard — your phone uses this
+- Good for **display and plotting**
+- Bad for measuring distances and areas
+
+```r
+st_transform(data, crs = 4326)
+```
+:::
+::: {.column width="50%"}
+**EPSG:32735 — UTM Zone 35S**
+
+- Units: **metres**
+- Optimised for **southern-central Africa**
+- Good for **distance and area calculations**
+- Required before calling `st_distance()`
+
+```r
+st_transform(data, crs = 32735)
+```
+:::
+:::
+
+---
+
+## Why CRS Matters: The Area Trap
+
+```{r crs-demo}
+zmb_provinces |>
+  mutate(
+    area_wrong = as.numeric(st_area(geometry)) / 1e6,
+    area_sqkm  = as.numeric(st_area(st_transform(geometry, 32735))) / 1e6
+  ) |>
+  st_drop_geometry() |>
+  select(NAME_1, area_wrong, area_sqkm) |>
+  arrange(desc(area_sqkm)) |>
+  head(5)
+```
+
+::: {.warn-box}
+`area_wrong` is in degrees-squared — meaningless. Always `st_transform()` to EPSG:32735 before measuring in Zambia.
+:::
+
+---
+
+## Downloading Zambia Boundaries in R
+
+```{r gadm-demo, eval=FALSE}
+library(geodata)
+
+# Download directly — no shapefile download needed
+zmb_provinces_raw <- gadm("ZMB", level = 1, path = tempdir())
+zmb_districts_raw <- gadm("ZMB", level = 2, path = tempdir())
+
+# Convert SpatVector → sf (required for ggplot2 and leaflet)
+zmb_provinces <- st_as_sf(zmb_provinces_raw)
+zmb_districts <- st_as_sf(zmb_districts_raw)
+```
+
+::: {.zicta-box}
+`gadm()` returns a **SpatVector** (terra package). Always call `st_as_sf()` immediately after. Forgetting this is the #1 error when using `geodata`.
+:::
+
+Province names in `NAME_1`: `r paste(sort(zmb_provinces$NAME_1), collapse = ", ")`
+
+---
+
+## Your First Regulatory Map
+
+```{r first-map, fig.height=4.5, fig.width=7}
+ggplot(zmb_provinces) +
+  geom_sf(fill = "#f0f0f0", colour = "grey40", linewidth = 0.4) +
+  geom_sf_label(aes(label = NAME_1), size = 2.2, fill = "white",
+                label.size = 0, label.padding = unit(0.1, "lines")) +
+  labs(title = "Zambia — 10 Provinces",
+       caption = "Source: GADM (geodata package)") +
+  theme_void()
+```
+
+---
+
+# Province Choropleth {background-color="#1a3a5c"}
+
+**Connecting ZICTA data to the map**
+
+---
+
+## The Core Pattern: A Spatial Attribute Join
+
+This is `left_join()` — exactly what you learned in Week 10.
+The only difference: the left table is an sf object, so the result is also spatial.
+
+```{r join-demo}
+provinces_mapped <- zmb_provinces |>
+  left_join(coverage, by = c("NAME_1" = "province"))
+
+# Always validate: NAs here = name mismatch
+provinces_mapped |>
+  st_drop_geometry() |>
+  filter(is.na(internet_penetration_pct)) |>
+  pull(NAME_1)
+```
+
+::: {.warn-box}
+`character(0)` = no mismatches. Any province names appearing here means a spelling mismatch to fix. "North-Western" (with hyphen) is the GADM spelling — your CSV must match exactly.
+:::
+
+---
+
+## Basic Choropleth
+
+```{r basic-choro, fig.height=4, fig.width=7}
+ggplot(provinces_mapped) +
+  geom_sf(aes(fill = internet_penetration_pct)) +
+  scale_fill_viridis_c(name = "Internet\npenetration (%)") +
+  labs(title = "Internet Penetration by Province, Zambia 2022",
+       caption = "Source: ZICTA 2022 | Boundaries: GADM") +
+  theme_void()
+```
+
+---
+
+## Publication-Ready: Labels and Palette Direction
+
+```{r pub-choro, fig.height=4.2, fig.width=8, echo=FALSE}
+province_labels <- zmb_provinces |>
+  st_transform(32735) |>
+  mutate(centroid = st_centroid(geometry)) |>
+  st_drop_geometry() |>
+  rename(geometry = centroid) |>
+  st_as_sf(crs = 32735) |>
+  st_transform(4326)
+
+ggplot() +
+  geom_sf(data = provinces_mapped, aes(fill = internet_penetration_pct),
+          colour = "white", linewidth = 0.4) +
+  geom_sf_text(data = province_labels, aes(label = NAME_1),
+               size = 2.1, colour = "white", fontface = "bold") +
+  scale_fill_viridis_c(name = "Internet\npenetration (%)", option = "plasma",
+                       direction = -1, labels = function(x) paste0(x, "%")) +
+  labs(title    = "Internet Penetration by Province, Zambia 2022",
+       subtitle = "Lusaka (67.8%) and Copperbelt (52.1%) far exceed rural provinces",
+       caption  = "Source: ZICTA 2022 ICT Indicators | Boundaries: GADM") +
+  theme_void(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 13),
+        plot.subtitle = element_text(colour = "grey40"),
+        legend.position = "right")
+```
+
+`direction = -1` reverses the palette: **darker = lower penetration**, drawing attention to underserved areas.
+
+---
+
+## Colour Palette Choices
+
+::: columns
+::: {.column width="50%"}
+**`scale_fill_viridis_c()`**
+
+- Perceptually uniform
+- Accessible to colour-blind readers
+- Options: `"viridis"`, `"plasma"`, `"magma"`, `"cividis"`
+- `direction = -1` reverses the scale
+
+Best for: continuous data like penetration rates
+:::
+::: {.column width="50%"}
+**`scale_fill_distiller()`**
+
+- Diverging palettes: `"RdYlGn"`, `"PuOr"`
+- Sequential palettes: `"Blues"`, `"Reds"`
+
+Best for: compliance scores, tower counts, data with a natural midpoint
+
+**Rule:** Always explain your palette choice in the map caption.
+:::
+:::
+
+---
+
+## Faceted Choropleth: Comparing Two Indicators
+
+```{r facet-choro, fig.height=4, fig.width=9, echo=FALSE}
+provinces_long <- provinces_mapped |>
+  select(NAME_1, internet_penetration_pct, mobile_coverage_pct, geometry) |>
+  pivot_longer(cols = c(internet_penetration_pct, mobile_coverage_pct),
+               names_to = "indicator", values_to = "value") |>
+  mutate(indicator = recode(indicator,
+    "internet_penetration_pct" = "Internet Penetration (%)",
+    "mobile_coverage_pct"      = "Mobile Network Coverage (%)"))
+
+ggplot(provinces_long) +
+  geom_sf(aes(fill = value), colour = "white", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "plasma", direction = -1, name = "Value (%)") +
+  facet_wrap(~ indicator) +
+  labs(title = "Digital Connectivity Indicators by Province, Zambia 2022",
+       caption = "Source: ZICTA 2022 | Boundaries: GADM") +
+  theme_void(base_size = 11) +
+  theme(strip.text = element_text(face = "bold"), legend.position = "bottom")
+```
+
+---
+
+## Reading the Faceted Map
+
+::: {.zicta-box}
+**Key observation:** Mobile coverage is universally higher than internet penetration — often by 30–50 percentage points in rural provinces.
+
+Zambia has **towers** (signal exists) but limited **internet use** (service is not being adopted at the same rate).
+:::
+
+**What explains this gap?**
+
+- Handset affordability
+- Data costs relative to income
+- Digital literacy
+- Relevance of available content
+
+> This is a **ZICTA policy question**, not just a data observation. The map makes it visible.
+
+---
+
+# Interactive Maps with leaflet {background-color="#1a3a5c"}
+
+**Zoom, click, and toggle — maps for exploration**
+
+---
+
+## leaflet vs ggplot2
+
+| | ggplot2 | leaflet |
+|--|---------|---------|
+| Output | Static PNG/PDF | Interactive HTML |
+| Best for | Reports, slides, publications | Dashboards, exploration, stakeholder meetings |
+| Syntax | `+` to add layers | `%>%` to add layers |
+| Palette functions | `scale_fill_viridis_c()` | `colorNumeric()` |
+| Data CRS required | Any (ggplot handles it) | **Must be EPSG:4326** |
+
+::: {.warn-box}
+If your leaflet map appears blank, the most common cause is data in a projected CRS (e.g., 32735). Always `st_transform(4326)` before passing to leaflet.
+:::
+
+---
+
+## The leaflet Pipeline
+
+```{r leaflet-basic, eval=FALSE}
+pal_internet <- colorNumeric(      # ① Build colour palette
+  palette = "plasma",
+  domain  = provinces_mapped$internet_penetration_pct,
+  reverse = TRUE
+)
+
+leaflet(provinces_mapped) %>%      # ② Initialise with data
+  addProviderTiles("CartoDB.Positron") %>%   # ③ Base map tiles
+  addPolygons(                               # ④ Add polygon layer
+    fillColor   = ~pal_internet(internet_penetration_pct),
+    fillOpacity = 0.75,
+    color       = "white",
+    weight      = 1
+  ) %>%
+  addLegend(                                 # ⑤ Add legend
+    pal    = pal_internet,
+    values = ~internet_penetration_pct,
+    title  = "Internet Penetration (%)"
+  )
+```
+
+The `~` (tilde) means **"evaluate as a formula on the data"**. You will see it in every `fillColor`, `label`, and `popup` argument.
+
+---
+
+## Interactive Choropleth with Hover Labels
+
+```{r leaflet-hover, echo=FALSE}
+leaflet(provinces_mapped) |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    fillColor   = ~pal_internet(internet_penetration_pct),
+    fillOpacity = 0.75,
+    color       = "white", weight = 1.5,
+    highlight   = highlightOptions(weight = 3, color = "#FFD700", bringToFront = TRUE),
+    label = ~paste0(
+      "<b>", NAME_1, "</b><br>",
+      "Internet: <b>", internet_penetration_pct, "%</b><br>",
+      "Mobile coverage: ", mobile_coverage_pct, "%"
+    ) |> lapply(htmltools::HTML)
+  ) |>
+  addLegend(pal = pal_internet, values = ~internet_penetration_pct,
+            title = "Internet (%)", position = "bottomright")
+```
+
+---
+
+## Converting a CSV to Spatial Points
+
+```{r st-as-sf-demo}
+towers_sf <- towers |>
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+```
+
+::: {.warn-box}
+**Order matters:** `coords = c("longitude", "latitude")` — X (longitude) **before** Y (latitude). Swapping these places all points in the southern Atlantic. R does **not** warn you.
+:::
+
+```{r check-points, fig.height=2.5, fig.width=5, echo=FALSE}
+par(mar = c(2, 2, 1, 1))
+plot(st_geometry(zmb_provinces), col = "#f5f5f5", border = "grey60")
+plot(st_geometry(towers_sf), add = TRUE, col = "#E41A1C", pch = 16, cex = 0.8)
+title("Tower locations — quick sanity check", cex.main = 0.9)
+```
+
+---
+
+## Tower Map with Operator Colours
+
+```{r tower-map, echo=FALSE}
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(data = provinces_mapped, fillColor = "transparent",
+              color = "grey60", weight = 1, label = ~NAME_1) |>
+  addCircleMarkers(
+    data = towers_sf, radius = 6,
+    color = ~operator_colours(operator),
+    fillColor = ~operator_colours(operator),
+    fillOpacity = 0.85, stroke = FALSE,
+    popup = ~paste0("<b>", operator, "</b><br>",
+                   district, ", ", province, "<br>Year: ", year_installed)
+  ) |>
+  addLegend(pal = operator_colours, values = towers_sf$operator, title = "Operator")
+```
+
+---
+
+## Layered Map: Choropleth + Operators + Toggles
+
+```{r layered-map, echo=FALSE}
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(data = provinces_mapped,
+    fillColor = ~pal_internet(internet_penetration_pct),
+    fillOpacity = 0.55, color = "white", weight = 1.2,
+    label = ~paste0(NAME_1, ": ", internet_penetration_pct, "%") |> lapply(htmltools::HTML),
+    group = "Internet Penetration"
+  ) |>
+  addCircleMarkers(data = towers_sf |> dplyr::filter(operator == "Airtel Zambia"),
+    radius = 5, color = "#E41A1C", fillColor = "#E41A1C",
+    fillOpacity = 0.9, stroke = FALSE,
+    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", province),
+    group = "Airtel Zambia"
+  ) |>
+  addCircleMarkers(data = towers_sf |> dplyr::filter(operator == "MTN Zambia"),
+    radius = 5, color = "#377EB8", fillColor = "#377EB8",
+    fillOpacity = 0.9, stroke = FALSE,
+    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", province),
+    group = "MTN Zambia"
+  ) |>
+  addCircleMarkers(data = towers_sf |> dplyr::filter(operator == "ZAMTEL"),
+    radius = 5, color = "#4DAF4A", fillColor = "#4DAF4A",
+    fillOpacity = 0.9, stroke = FALSE,
+    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", province),
+    group = "ZAMTEL"
+  ) |>
+  addCircleMarkers(data = towers_sf |> dplyr::filter(operator == "Liquid Telecom"),
+    radius = 5, color = "#FF7F00", fillColor = "#FF7F00",
+    fillOpacity = 0.9, stroke = FALSE,
+    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", province),
+    group = "Liquid Telecom"
+  ) |>
+  addLayersControl(
+    overlayGroups = c("Internet Penetration", "Airtel Zambia", "MTN Zambia",
+                      "ZAMTEL", "Liquid Telecom"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+```
+
+---
+
+# Spatial Joins {background-color="#1a3a5c"}
+
+**Using geography as the join key**
+
+---
+
+## Attribute Join vs Spatial Join
+
+::: columns
+::: {.column width="50%"}
+**Week 10: Attribute join**
+
+```r
+# Shared key column required
+left_join(coverage,
+  by = c("NAME_1" = "province"))
+```
+
+Join key = a column value (province name)
+:::
+::: {.column width="50%"}
+**Today: Spatial join**
+
+```r
+# No shared column needed
+towers_sf |>
+  st_join(zmb_provinces)
+```
+
+Join key = **geographic location**
+Point falls inside polygon → inherits its attributes
+:::
+:::
+
+::: {.zicta-box}
+`st_join()` is the spatial equivalent of a left join. Each point gets the attributes of whichever polygon it falls inside. If a point is outside all polygons, it gets `NA`.
+:::
+
+---
+
+## Validating a Spatial Join
+
+```{r st-join-demo}
+towers_enriched <- towers_sf |>
+  st_join(zmb_provinces |> select(NAME_1))
+
+towers_enriched |>
+  st_drop_geometry() |>
+  select(tower_id, operator, province, NAME_1) |>
+  mutate(match = province == NAME_1) |>
+  count(match)
+```
+
+::: {.zicta-box}
+All 72 towers correctly fall within their named provinces. In real ZICTA data this check catches GPS transcription errors in infrastructure registries — a common data quality issue.
+:::
+
+---
+
+## Aggregating Points to Province Level
+
+```{r agg-points}
+towers_per_province <- towers_enriched |>
+  st_drop_geometry() |>
+  count(NAME_1, name = "n_towers") |>
+  rename(province = NAME_1)
+
+provinces_towers <- zmb_provinces |>
+  left_join(towers_per_province, by = c("NAME_1" = "province")) |>
+  mutate(n_towers = replace_na(n_towers, 0))
+```
+
+::: {.warn-box}
+`replace_na(n_towers, 0)` is essential. Provinces with **no towers** still need a value to appear correctly on the map. An `NA` would make them transparent or cause an error.
+:::
+
+---
+
+## Coverage Gap Analysis: The Key Output
+
+```{r gap-map, fig.height=4, fig.width=7, echo=FALSE}
+coverage_gap <- provinces_towers |>
+  left_join(coverage, by = c("NAME_1" = "province")) |>
+  mutate(priority_flag = internet_penetration_pct < 20 & n_towers < 8)
+
+ggplot(coverage_gap) +
+  geom_sf(aes(fill = priority_flag), colour = "white", linewidth = 0.4) +
+  scale_fill_manual(values = c("FALSE" = "#d4e6f1", "TRUE" = "#c0392b"),
+                    labels  = c("FALSE" = "Not priority", "TRUE" = "Priority (low penetration + few towers)"),
+                    name    = "") +
+  geom_sf_text(aes(label = NAME_1), size = 2.1, colour = "grey20") +
+  labs(title   = "USAF Priority Provinces: Low Penetration and Low Tower Density",
+       caption = "Priority: internet penetration < 20% AND fewer than 8 licensed towers") +
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+---
+
+## Distance Calculations with st_distance()
+
+```{r distance-demo, eval=FALSE}
+# Step 1: Compute the reference point in a projected CRS
+lusaka_centroid <- zmb_provinces |>
+  filter(NAME_1 == "Lusaka") |>
+  st_transform(32735) |>          # ← MUST be projected for distance
+  st_centroid() |>
+  st_geometry()
+
+# Step 2: Transform towers to the same CRS, then measure
+towers_utm <- towers_sf |>
+  st_transform(32735) |>
+  mutate(dist_lusaka_km = as.numeric(
+    st_distance(geometry, lusaka_centroid)
+  ) / 1000)
+```
+
+::: {.warn-box}
+`st_distance()` with geographic coordinates (4326) returns values in degrees — meaningless and silently wrong. **Always project to 32735 first.**
+:::
+
+---
+
+# Capstone Exercise {background-color="#1a3a5c"}
+
+**Your group, your map, your regulatory mandate**
+
+---
+
+## Capstone: How It Works
+
+**90 minutes | Group work | 2-minute presentation per group**
+
+Each functional group produces **one publication-ready map** that could appear in the ZICTA Annual Report.
+
+Use the starter code in `ZICTA_Geo_Student.R` Section 5 for your group.
+The facilitator will circulate every 10–15 minutes.
+
+::: {.zicta-box}
+**What makes a map publication-ready?**
+
+- Clear title and subtitle stating the finding, not just the topic
+- Source and date in the caption
+- Meaningful colour palette (explained or self-evident)
+- Province or district labels where space allows
+:::
+
+---
+
+## Group A — Engineering
+
+**Task: ZAMTEL infrastructure gap analysis**
+
+1. Filter the tower registry to ZAMTEL only
+2. Count ZAMTEL towers per province and produce a choropleth
+3. Flag towers more than 500 km from Lusaka as "remote" on a leaflet map
+4. **Findings to present:** Which provinces have fewer than 2 ZAMTEL towers? How many towers are classified as remote?
+
+*Key functions:* `filter()`, `st_join()`, `count()`, `st_distance()`, `addCircleMarkers()`
+
+---
+
+## Groups B & C — Statistical Unit & Financial Statistics
+
+**Group B: Four-indicator comparison + inequality quantification**
+
+1. Add a `towers_per_million` column to the province data
+2. Produce a 2×2 faceted choropleth of all 4 connectivity indicators
+3. Calculate the max/min ratio for each indicator
+4. **Finding to present:** Which indicator shows the greatest provincial inequality?
+
+**Group C: Compliance + penetration relationship**
+
+1. Load `sample_data_telecoms.csv` and compute average compliance by province
+2. Map compliance scores as a choropleth
+3. Build a scatter plot: compliance score vs internet penetration
+4. **Finding to present:** Is there a relationship? What does it suggest for enforcement priority?
+
+---
+
+## Groups D & E — Postal Services & Universal Access
+
+**Group D: USAF project map**
+
+1. Convert `zicta_usaf_projects.csv` to sf with `st_as_sf()`
+2. Build a leaflet map coloured by project status (Completed/Ongoing/Planned)
+3. Make circle size proportional to budget
+4. **Finding to present:** Which province has received the most total USAF investment?
+
+**Group E: Underinvestment targeting**
+
+1. Join USAF budget totals to the province spatial layer
+2. Flag provinces where: internet penetration < 20% **AND** total USAF investment < $500k
+3. Produce a final priority map and summary table
+4. **Finding to present:** Which provinces are priority targets and what is the total population at risk?
+
+---
+
+# Closing {background-color="#1a3a5c"}
+
+---
+
+## Key Functions Reference
+
+| Function | Package | Purpose |
+|----------|---------|---------|
+| `st_as_sf(coords=...)` | sf | CSV with lat/lon → spatial object |
+| `st_transform(crs=...)` | sf | Change coordinate reference system |
+| `st_crs()` | sf | Check current CRS |
+| `st_join()` | sf | Spatial join (point-in-polygon) |
+| `st_centroid()` | sf | Compute polygon centroid |
+| `st_distance()` | sf | Distance between geometries |
+| `geom_sf()` | ggplot2 | Draw sf objects |
+| `geom_sf_text()` | ggplot2 | Labels at geometry locations |
+| `colorNumeric()` | leaflet | Continuous colour palette |
+| `colorFactor()` | leaflet | Categorical colour palette |
+| `addPolygons()` | leaflet | Polygon layer |
+| `addCircleMarkers()` | leaflet | Point layer |
+| `addLayersControl()` | leaflet | Toggle controls |
+
+---
+
+## Zambia Spatial Data Sources
+
+| Source | What it provides | Access |
+|--------|-----------------|--------|
+| `geodata::gadm("ZMB")` | Province + district boundaries | Free, in-R |
+| OCHA HDX | Admin boundaries, GeoJSON | data.humdata.org |
+| WorldPop | Population grid (100m) | worldpop.org |
+| Zambia Statistics Agency | 2022 Census tables | zamstats.gov.zm |
+| GSMA Coverage API | 2G/3G/4G coverage polygons | gsma.com/coverage |
+| OpenCelID | Crowdsourced tower locations | opencellid.org |
+| Natural Earth | Country borders, roads, rivers | naturalearthdata.com |
+
+Full annotated list: `Zambia_Spatial_Data_Sources.md` in the session folder.
+
+---
+
+## What Comes Next
+
+::: columns
+::: {.column width="50%"}
+**Immediate applications**
+
+- Embed today's leaflet maps directly into a flexdashboard (Module 15–16 skills)
+- Add these maps to the ZICTA Annual Report template
+- Update with real ZICTA data — the code structure is identical
+:::
+::: {.column width="50%"}
+**Extensions to explore**
+
+- District-level analysis: change `level = 1` → `level = 2` in `gadm()`
+- Raster data: population grids with `terra`
+- OpenStreetMap data: roads, schools via `osmdata`
+- Buffer zones: `st_buffer()` for signal coverage approximation
+:::
+:::
+
+::: {.zicta-box}
+All R scripts, datasets, and this slide deck are in `ZICTA_training/Modules/Geo Session/`. The code runs unchanged once the ZICTA datasets are updated with real values.
+:::
+
+---
+
+## Thank You
+
+**Matteo Larrode | International Growth Centre**
+
+Session materials:
+- `ZICTA_Geo_Live_Script.R` — full annotated facilitator script
+- `ZICTA_Geo_Student.R` — fill-in-blank student version
+- `Zambia_Spatial_Data_Sources.md` — curated data sources
+- `Geo_Session_Facilitation_Guide.md` — re-delivery guide for ZEL
+
+> Questions? Challenges? Ideas for your Annual Report?
