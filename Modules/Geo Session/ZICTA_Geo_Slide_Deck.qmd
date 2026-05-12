@@ -178,6 +178,104 @@ Where are tower density and broadband access both low enough to warrant regulato
 
 ---
 
+# Getting the Materials: Git and GitHub {background-color="#1a3a5c"}
+
+**Clone the repo — this is how you get the data**
+
+---
+
+## Why Git? The Problem It Solves
+
+::: columns
+::: {.column width="50%"}
+**Without version control:**
+
+- `analysis_v1.R`
+- `analysis_v2.R`
+- `analysis_FINAL.R`
+- `analysis_FINAL2.R`
+- `analysis_ACTUAL_FINAL.R`
+
+→ No one knows which is current.
+→ Collaborators overwrite each other's work.
+:::
+::: {.column width="50%"}
+**With git:**
+
+- One file: `analysis.R`
+- Full history of every change
+- Who changed what, and when
+- Multiple people work simultaneously
+
+→ ZICTA analysts share, review, and build on each other's work.
+:::
+:::
+
+---
+
+## The Three Concepts You Need Today
+
+::: {.zicta-box}
+**Repository (repo)** — A folder tracked by git. Contains all your files *plus* the full history of every change ever made. Lives locally on your machine and remotely on GitHub.
+:::
+
+::: {.zicta-box}
+**Commit** — A named snapshot. "Here is the state of my work, labelled: *Add province choropleth map*." Commits are permanent and reversible.
+:::
+
+::: {.zicta-box}
+**Push / Pull** — `push` sends your commits to GitHub. `pull` downloads commits others have pushed. The repo on GitHub is the shared reference point.
+:::
+
+---
+
+## Getting the Training Materials: `git clone`
+
+Open **Git Bash** (Windows) or **Terminal** (Mac). Run:
+
+```bash
+git clone https://github.com/[ZICTA-ORG]/ZICTA_training.git
+cd ZICTA_training
+```
+
+This downloads everything — scripts, datasets, slides — in one command.
+
+Then open the project in RStudio:
+
+**File → Open Project → `ZICTA_training.Rproj`**
+
+::: {.warn-box}
+Always open via the `.Rproj` file — not by opening an `.R` script directly. The project file sets your working directory to the repo root, which makes all `read_csv("Datasets/...")` paths work automatically.
+:::
+
+---
+
+## Submitting Your Capstone: The Full Workflow
+
+After the group exercise, commit and push your map to GitHub:
+
+```bash
+# 1. Check what has changed
+git status
+
+# 2. Stage your group's file(s)
+git add Capstone/GroupA_Engineering/GroupA_capstone.R
+
+# 3. Save a named snapshot
+git commit -m "GroupA: Engineering tower gap analysis"
+
+# 4. Share it — push to GitHub
+git push
+```
+
+Your work then appears at `github.com/[ZICTA-ORG]/ZICTA_training` under `Capstone/GroupA_Engineering/`.
+
+::: {.zicta-box}
+**One rule:** only touch files inside your group's folder (`Capstone/GroupX_Name/`). This avoids conflicts with other groups working at the same time.
+:::
+
+---
+
 # Spatial Data Fundamentals {background-color="#1a3a5c"}
 
 **sf objects, CRS, and your first map**

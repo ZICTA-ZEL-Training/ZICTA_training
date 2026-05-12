@@ -4,6 +4,61 @@ For re-delivery by ZEL (Chomba Kalunga & Kosam Chola)
 
 ---
 
+## 0. Pre-Session Git Setup (Do This Before the Day)
+
+This section covers the logistics of getting all participants into the repository and able to push their capstone work. Most failures on the day are caused by skipping these steps.
+
+### 0.1 GitHub Organisation Setup
+
+The repository lives at `github.com/[ZICTA-ORG]/ZICTA_training`. Before the session:
+
+1. **Collect GitHub usernames** from all participants (they were asked to register in advance — follow up with anyone who hasn't)
+2. **Add participants to the ZICTA GitHub org** (Owner or Admin access required):
+   - Go to `github.com/[ZICTA-ORG]` → People → Invite member
+   - Invite by GitHub username
+   - Set role: **Member** (not Owner)
+3. **Check repo permissions**: The `ZICTA_training` repo should allow write access for org members. In the repo: Settings → Collaborators and teams → confirm the org's default member role can push.
+
+> If moving the repo from ZEL to the ZICTA org: `github.com/[ZEL-ORG]/ZICTA_training` → Settings → Transfer → enter `[ZICTA-ORG]`. All existing clone URLs redirect automatically for 6 months.
+
+### 0.2 Pre-Session Check (One Week Before)
+
+Send participants this message:
+
+> *"Before the geospatial session, please complete these three steps: (1) create a GitHub account if you don't have one, (2) reply to this message with your GitHub username, (3) follow the setup instructions in SETUP.md — the link is in the training portal."*
+
+Ask participants to confirm they can run:
+```r
+coverage <- read_csv("Datasets/zicta_coverage_by_province.csv")
+nrow(coverage)   # should return 10
+```
+
+### 0.3 Day-of Setup (First 15 Minutes of Session)
+
+**Before participants arrive:**
+- Run `git pull` on your own machine to confirm the repo is up to date
+- Have `SETUP.md` open on the projector as participants arrive and log in
+
+**As participants arrive (not a formal session activity — do while people settle):**
+1. Ask each person to open Git Bash / Terminal
+2. Confirm `git --version` returns something (not "command not found")
+3. Anyone who hasn't cloned: run `git clone` together while others wait
+4. Everyone opens `ZICTA_training.Rproj` in RStudio
+5. Anyone with path errors: check they opened the `.Rproj` file, not a `.R` script
+
+**Time budget:** 10–15 minutes if most participants prepared in advance. Up to 30 minutes if git was not installed. Have a USB drive with the R packages and datasets as a fallback for anyone who cannot clone.
+
+### 0.4 Troubleshooting Access
+
+| Problem | Most likely cause | Fix |
+|---------|------------------|-----|
+| "Repository not found" when cloning | Not added to GitHub org | Add them to org; they re-accept invitation |
+| "Permission denied (publickey)" | SSH vs HTTPS confusion | Use HTTPS URL: `https://github.com/...` not `git@github.com:...` |
+| "Authentication failed" when pushing | Not logged in to GitHub in Git Bash | Run `git config --global user.email "their@email.com"` then push again; browser will prompt for GitHub login |
+| git not installed | Skipped setup step | Install from https://git-scm.com and restart terminal |
+
+---
+
 ## 1. Session Overview
 
 ### Learning Objectives
@@ -58,29 +113,32 @@ zmb_districts <- sf::st_read("zambia_districts.gpkg")
 
 | Time | Section | Content |
 |------|---------|---------|
-| 08:30 | Pre-session | Facilitator runs Section 0, confirms setup |
-| 09:00 | Section 1 | Spatial data fundamentals: sf, CRS, first map |
-| 09:45 | Break (10 min) | |
-| 09:55 | Section 2 | Province choropleth: join + ggplot2 |
-| 11:00 | Break (15 min) | |
-| 11:15 | Section 3 | Interactive leaflet maps |
-| 12:15 | Lunch (60 min) | |
-| 13:15 | Section 4 | Spatial joins: st_join, aggregation, coverage gap |
-| 14:00 | Break (10 min) | |
-| 14:10 | Section 5 | Capstone exercise (group work) |
-| 15:40 | Presentations | 2 minutes per group |
-| 16:00 | Close | Key functions cheat sheet, Q&A |
+| 08:30 | Pre-session | Facilitator runs `git pull`, confirms all participants cloned |
+| 09:00 | **Git mini-module** | Why git, clone + push workflow, capstone submission process |
+| 09:20 | Section 1 | Spatial data fundamentals: sf, CRS, first map |
+| 10:05 | Break (10 min) | |
+| 10:15 | Section 2 | Province choropleth: join + ggplot2 |
+| 11:15 | Break (15 min) | |
+| 11:30 | Section 3 | Interactive leaflet maps |
+| 12:30 | Lunch (60 min) | |
+| 13:30 | Section 4 | Spatial joins: st_join, aggregation, coverage gap |
+| 14:15 | Break (10 min) | |
+| 14:25 | Section 5 | Capstone exercise (group work) |
+| 15:50 | **Git submission** | Groups commit and push capstone maps |
+| 16:10 | Presentations | 2 minutes per group — show GitHub link on screen |
+| 16:30 | Close | Key functions cheat sheet, Q&A |
 
 ### Two Half-Day Format
 
-**Day 1 (3 hours):** Sections 0–2
+**Day 1 (3 hours):** Git mini-module + Sections 1–2
+- Git setup, clone, pull (20 min)
 - Spatial data fundamentals, CRS, first map
 - Province choropleth: join + basic + publication-ready + faceted
 
-**Day 2 (3 hours):** Sections 3–5
+**Day 2 (3 hours):** Sections 3–5 + git push
 - Interactive leaflet maps
 - Spatial joins and coverage gap analysis
-- Capstone exercise
+- Capstone exercise + commit + push
 
 ### What to Cut If Running Behind
 If the session is running 15–20 minutes late, these sub-sections can be shortened or skipped without losing core skills:
