@@ -1,95 +1,48 @@
-# Facilitation Guide: Geospatial Analysis Session
+# Facilitation Guide: Spatial Analysis Session
 **ZICTA R Training Programme**
-For re-delivery by ZEL (Chomba Kalunga & Kosam Chola)
+Matteo Larrode & Kosam Chola
 
 ---
 
-## 0. Pre-Session Git Setup (Do This Before the Day)
+## 0. Pre-Session Setup (Complete Before the Day)
 
 This section covers the logistics of getting all participants into the repository and able to push their capstone work. Most failures on the day are caused by skipping these steps.
 
 ### 0.1 GitHub Organisation Setup
 
-The repository lives at `github.com/[ZICTA-ORG]/ZICTA_training`. Before the session:
+The repository lives at `github.com/ZICTA-ZEL-Training/ZICTA_training`. Before the session:
 
 1. **Collect GitHub usernames** from all participants (they were asked to register in advance — follow up with anyone who hasn't)
 2. **Add participants to the ZICTA GitHub org** (Owner or Admin access required):
-   - Go to `github.com/[ZICTA-ORG]` → People → Invite member
+   - Go to `github.com/ZICTA-ZEL-Training` → People → Invite member
    - Invite by GitHub username
    - Set role: **Member** (not Owner)
 3. **Check repo permissions**: The `ZICTA_training` repo should allow write access for org members. In the repo: Settings → Collaborators and teams → confirm the org's default member role can push.
 
-> If moving the repo from ZEL to the ZICTA org: `github.com/[ZEL-ORG]/ZICTA_training` → Settings → Transfer → enter `[ZICTA-ORG]`. All existing clone URLs redirect automatically for 6 months.
-
-### 0.2 Pre-Session Check (One Week Before)
+### 0.2 Pre-Session Check
 
 Send participants this message:
 
-> *"Before the geospatial session, please complete these three steps: (1) create a GitHub account if you don't have one, (2) reply to this message with your GitHub username, (3) follow the setup instructions in SETUP.md — the link is in the training portal."*
+> *"Before the spatial analysis session, please complete these three steps: (1) create a GitHub account if you don't have one, (2) reply to this message with your GitHub username, (3) follow the setup instructions in the README.md in the repository."*
 
-Ask participants to confirm they can run:
-```r
-coverage <- read_csv("Datasets/zicta_coverage_by_province.csv")
-nrow(coverage)   # should return 10
-```
-
-### 0.3 Day-of Setup (First 15 Minutes of Session)
+### 0.3 Day-of Setup (Before 09:15)
 
 **Before participants arrive:**
-- Run `git pull` on your own machine to confirm the repo is up to date
-- Have `SETUP.md` open on the projector as participants arrive and log in
+- Open the rendered slide deck (`ZICTA_Geo_Slide_Deck.html`) in a browser tab
+- Open `ZICTA_Geo_Live_Script.R` in RStudio, scrolled to line 88 (start of Section 1)
+- Have a Git Bash / terminal window open alongside RStudio
 
 **As participants arrive (not a formal session activity — do while people settle):**
-1. Ask each person to open Git Bash / Terminal
-2. Confirm `git --version` returns something (not "command not found")
-3. Anyone who hasn't cloned: run `git clone` together while others wait
-4. Everyone opens `ZICTA_training.Rproj` in RStudio
-5. Anyone with path errors: check they opened the `.Rproj` file, not a `.R` script
+1. Ask each person to open RStudio terminal
+2. Confirm `git --version` returns something (not "command not found"). Anyone who hasnt downloaded git, do it (url is https://git-scm.com/install/windows).
 
-**Time budget:** 10–15 minutes if most participants prepared in advance. Up to 30 minutes if git was not installed. Have a USB drive with the R packages and datasets as a fallback for anyone who cannot clone.
+3. Ask each person to open Github on browser and join the ZICTA-ZEL-Training organisation
+4. Everyone needs to run `git clone https://github.com/ZICTA-ZEL-Training/ZICTA_training.git` in their preferred folder together
 
-### 0.4 Troubleshooting Access
+5. Everyone opens `ZICTA_training.Rproj` in RStudio. Anyone with path errors: check they opened the `.Rproj` file, not a `.R` script
+6. Everyone runs the setup from the README.md.
 
-| Problem | Most likely cause | Fix |
-|---------|------------------|-----|
-| "Repository not found" when cloning | Not added to GitHub org | Add them to org; they re-accept invitation |
-| "Permission denied (publickey)" | SSH vs HTTPS confusion | Use HTTPS URL: `https://github.com/...` not `git@github.com:...` |
-| "Authentication failed" when pushing | Not logged in to GitHub in Git Bash | Run `git config --global user.email "their@email.com"` then push again; browser will prompt for GitHub login |
-| git not installed | Skipped setup step | Install from https://git-scm.com and restart terminal |
-
----
-
-## 1. Session Overview
-
-### Learning Objectives
-By the end of this session participants will be able to:
-
-1. Explain the difference between geographic (WGS84) and projected (UTM) coordinate reference systems and know when to use each
-2. Download Zambia administrative boundaries using `geodata::gadm()` and convert to sf format
-3. Produce a province-level choropleth map by joining ZICTA data to a GADM shapefile using `left_join()`
-4. Build an interactive leaflet map with popups, hover labels, and operator layer toggles
-5. Perform a spatial join (`st_join()`) to aggregate point data to province level and identify coverage gaps
-
-### Assumed Prior Knowledge
-Participants must have completed at least **Modules 1–10** of the ZICTA R Training Programme. Specifically, they must be comfortable with:
-
-- `read_csv()`, `glimpse()`, `filter()`, `mutate()`, `select()`
-- `left_join()` by a shared key column (Module 10)
-- `ggplot2`: `geom_point()`, `geom_bar()`, `aes()`, `facet_wrap()`
-- `pivot_longer()` for reshaping data
-
-They do **not** need prior experience with spatial data, shapefiles, or mapping tools.
-
-### Materials Checklist
-Before the session:
-
-- [ ] `ZICTA_Geo_Live_Script.R` — facilitator coding script (this guide's companion)
-- [ ] `ZICTA_Geo_Student.R` — printed or distributed digitally to participants
-- [ ] `zicta_coverage_by_province.csv`, `zicta_towers.csv`, `zicta_usaf_projects.csv` accessible from working directory
-- [ ] Internet access confirmed — needed for `gadm()` download and leaflet map tiles
-- [ ] All packages pre-installed: `sf`, `geodata`, `leaflet`, `leaflet.extras`, `viridis`
-- [ ] Section 0 of the live script run before participants arrive (caches GADM data)
-- [ ] Slide deck rendered to HTML via `quarto render ZICTA_Geo_Slide_Deck.qmd`
+**Kosam** circulates to help stragglers while **Matteo** opens the session at 09:30 sharp.
 
 **If no internet during the session:**
 Run this before participants arrive to save the boundaries locally:
@@ -105,53 +58,345 @@ zmb_provinces <- sf::st_read("zambia_provinces.gpkg")
 zmb_districts <- sf::st_read("zambia_districts.gpkg")
 ```
 
----
+### 0.4 Troubleshooting Access
 
-## 2. Session Flow and Timing
-
-### Full-Day Format (recommended)
-
-| Time | Section | Content |
-|------|---------|---------|
-| 08:30 | Pre-session | Facilitator runs `git pull`, confirms all participants cloned |
-| 09:00 | **Git mini-module** | Why git, clone + push workflow, capstone submission process |
-| 09:20 | Section 1 | Spatial data fundamentals: sf, CRS, first map |
-| 10:05 | Break (10 min) | |
-| 10:15 | Section 2 | Province choropleth: join + ggplot2 |
-| 11:15 | Break (15 min) | |
-| 11:30 | Section 3 | Interactive leaflet maps |
-| 12:30 | Lunch (60 min) | |
-| 13:30 | Section 4 | Spatial joins: st_join, aggregation, coverage gap |
-| 14:15 | Break (10 min) | |
-| 14:25 | Section 5 | Capstone exercise (group work) |
-| 15:50 | **Git submission** | Groups commit and push capstone maps |
-| 16:10 | Presentations | 2 minutes per group — show GitHub link on screen |
-| 16:30 | Close | Key functions cheat sheet, Q&A |
-
-### Two Half-Day Format
-
-**Day 1 (3 hours):** Git mini-module + Sections 1–2
-- Git setup, clone, pull (20 min)
-- Spatial data fundamentals, CRS, first map
-- Province choropleth: join + basic + publication-ready + faceted
-
-**Day 2 (3 hours):** Sections 3–5 + git push
-- Interactive leaflet maps
-- Spatial joins and coverage gap analysis
-- Capstone exercise + commit + push
-
-### What to Cut If Running Behind
-If the session is running 15–20 minutes late, these sub-sections can be shortened or skipped without losing core skills:
-
-- **Section 1.2** (CRS area demonstration) — explain the concept verbally, skip the mutate() demo. Time saved: ~10 minutes
-- **Section 4.4** (st_distance calculations) — mention the concept, point to the code in the script, skip live coding. Time saved: ~10 minutes
-- **Section 2.3** (centroid label computation) — use geom_sf_label() on polygons directly (simpler, slightly less precise). Time saved: ~8 minutes
-
-Do **not** cut Section 2.1 (the join validation diagnostic) — this is a critical skill that prevents silent errors.
+| Problem | Most likely cause | Fix |
+|---------|------------------|-----|
+| "Repository not found" when cloning | Not added to GitHub org | Add them to org; they re-accept invitation |
+| "Permission denied (publickey)" | SSH vs HTTPS confusion | Use HTTPS URL: `https://github.com/...` not `git@github.com:...` |
+| "Authentication failed" when pushing | Not logged in to GitHub in Git Bash | Run `git config --global user.email "their@email.com"` then push again; browser will prompt for GitHub login |
+| git not installed | Skipped setup step | Install from https://git-scm.com and restart terminal |
 
 ---
 
-## 3. Common Technical Problems and Fixes
+## 1. Session Overview
+
+**Format:** Half-day  
+**Live instruction:** 09:30–11:45  
+**Capstone presentation:** 11:45–12:30 (Kosam Chola, standalone)
+
+### Learning Objectives
+
+By the end of the live instruction, participants will be able to:
+
+1. Explain the difference between geographic (WGS84) and projected (UTM) coordinate reference systems and know when to use each
+2. Download Zambia administrative boundaries using `geodata::gadm()` and convert to sf format
+3. Produce a province-level choropleth map by joining ZICTA data to a GADM shapefile using `left_join()`
+4. Build a publication-ready choropleth with viridis palette, labels, and correct colour direction
+5. Build a basic interactive leaflet map with hover labels and a point layer
+
+*Sections 4 and 5 of the live script (spatial joins, coverage gap analysis) are reference material — not covered in the live session. The capstone presentation by Kosam demonstrates these techniques as a complete worked example.*
+
+### Assumed Prior Knowledge
+
+Participants must have completed at least **Modules 1–10** of the ZICTA R Training Programme. Specifically, they must be comfortable with:
+
+- `read_csv()`, `glimpse()`, `filter()`, `mutate()`, `select()`
+- `left_join()` by a shared key column (Module 10)
+- `ggplot2`: `geom_point()`, `geom_bar()`, `aes()`, `facet_wrap()`
+- `pivot_longer()` for reshaping data
+
+They do **not** need prior experience with spatial data, shapefiles, or mapping tools.
+
+### Materials Checklist
+
+Before the session:
+
+- [ ] `ZICTA_Geo_Live_Script.R` — facilitator coding script (this guide's companion)
+- [ ] `ZICTA_Geo_Student.R` — printed or distributed digitally to participants
+- [ ] `zicta_coverage_by_province.csv`, `zicta_towers.csv`, `zicta_usaf_projects.csv` accessible from working directory
+- [ ] Internet access confirmed — needed for `gadm()` download and leaflet map tiles
+- [ ] All packages pre-installed: `sf`, `geodata`, `leaflet`, `leaflet.extras`, `viridis`
+- [ ] Section 0 of the live script run before participants arrive (caches GADM data)
+- [ ] Slide deck rendered to HTML via `quarto render ZICTA_Geo_Slide_Deck.qmd`
+
+---
+
+## 2. Precise Timetable
+
+This is your navigation guide for the session. Each block specifies time, mode, and reference, followed by what to run and what to say.
+
+**Legend:**  
+`SLIDE` — switch to slide deck  
+`R` — switch to RStudio / live script (line numbers refer to `ZICTA_Geo_Live_Script.R`)  
+`VERBAL` — talking point, no screen change  
+`BREAK` — pause
+
+---
+
+### Before 09:15 | Facilitator Prep
+
+**Matteo:**
+- RStudio open → `ZICTA_training.Rproj` → `ZICTA_Geo_Live_Script.R` scrolled to line 88
+- Confirm GADM cached: `nrow(zmb_provinces)` → `10`; `nrow(zmb_districts)` → `116`
+- Slide deck open in browser tab (rendered HTML)
+- Terminal / Git Bash window open alongside RStudio
+
+**Kosam:**
+- Prepare capstone materials for the 11:45 standalone presentation
+- Available to help participants with setup issues as they arrive
+
+---
+
+### 09:15–09:30 | Participants Arrive
+
+Not a formal session block. While people settle:
+- Kosam circulates; Matteo is available at the front
+- Ask each participant to run: `coverage <- read_csv("Datasets/zicta_coverage_by_province.csv"); nrow(coverage)` → should return `10`
+- If `0` or error: check working directory with `getwd()` — confirm `.Rproj` is open, not a standalone script
+
+---
+
+### 09:30–09:35 (5 min) | `SLIDE` — Title → Today's Session → Why Spatial Analysis?
+
+Show slides from the title through the "Why Spatial Analysis?" section.
+
+- "Today we go from tabular data to maps. Everything you've learned in dplyr and ggplot2 still applies — we're adding one new concept: geometry."
+- "Two facilitators: I'll lead the live coding throughout; Kosam will present the capstone from 11:45."
+- Agenda: git (15 min) → spatial fundamentals (45 min) → break → choropleth (35 min) → leaflet (25 min) → capstone 11:45
+
+→ *Move on at 09:35*
+
+---
+
+### 09:35–09:50 (15 min) | `SLIDE` — Git Section
+
+Show slides: **Why Git? The Problem It Solves** → **The Three Concepts You Need Today** → **Getting the Training Materials: `git clone`** → **Submitting Your Capstone: The Full Workflow**
+
+Key points to land:
+- "You already cloned the repo before today. The three commands for submission are `git add`, `git commit -m "..."`, `git push` — we'll use them at the end."
+- "Kosam will walk through the actual submission workflow at the end of the session."
+- "Your capstone file goes in `Modules/Geo Session/` with your name."
+
+Do **not** do a live push here — conceptual explanation only.
+
+→ *Move on at 09:50*
+
+---
+
+### 09:50–09:58 (8 min) | `R` lines 94–113 + `SLIDE` — sf Objects Are Just Data Frames
+
+Switch to RStudio. Script at line 94.
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 96 | `class(zmb_provinces)` | "Two classes: sf AND data.frame. Every dplyr verb you know still works." |
+| 102 | `glimpse(zmb_provinces)` | "Spot the geometry column at the bottom. It holds the polygon shapes — one per row." |
+| 106–108 | `filter(NAME_1 == "Lusaka") \|> select(NAME_1, COUNTRY)` | "Geometry tags along even though we didn't select it. That's the sticky column feature — not a bug." |
+
+Show slide **sf Objects Are Just Data Frames** alongside or after running.
+
+[PAUSE] "What does `class()` tell us? Why does 'data.frame' matter?"
+
+→ *Move on at 09:58*
+
+---
+
+### 09:58–10:10 (12 min) | `SLIDE` — CRS + `R` lines 115–162
+
+Show slides: **What Is a Coordinate Reference System?** + **Why CRS Matters: The Area Trap**
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 118 | `st_crs(zmb_provinces)` | "WGS84 — the GPS standard. Units are degrees. Good for display, bad for measuring." |
+| 129–130 | `st_transform(crs = 32735)` | "UTM Zone 35S — units are metres, optimised for southern-central Africa." |
+| 132 | `st_crs(zmb_provinces_utm)$input` | "Confirm the transform worked: output should say EPSG:32735." |
+| 136–147 | area calculation + arrange | Run the whole block. Show output. "area_wrong_units is in degrees-squared — meaningless. area_sqkm: Western at 126,000 km² matches published figures." |
+
+[PAUSE] "When would you use 4326 vs 32735?"  
+Answer cue: 4326 for anything that ends in ggplot or leaflet. 32735 when running `st_area()`, `st_distance()`, `st_buffer()`.
+
+→ *Move on at 10:10*
+
+---
+
+### 10:10–10:23 (13 min) | `SLIDE` — Your First Regulatory Map + `R` lines 164–188
+
+Show slide: **Downloading Zambia Boundaries in R** (briefly — data already loaded, context only)  
+Then: **Your First Regulatory Map**
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 167–171 | `ggplot(zmb_provinces) + geom_sf() + ...` | "`geom_sf()` draws polygons, lines, or points — it reads the geometry type automatically. `theme_void()` removes the axes." |
+| 177–184 | labeled map with `geom_sf_label()` | "`geom_sf_label()` places labels at polygon centres. Run this." |
+
+[ACTIVITY — 2 min] "Change `fill = "#f0f0f0"` to a colour of your choice. Any valid R colour string or hex code works."
+
+[PAUSE] "Is this map correct? Does it match what you expect Zambia to look like?"
+
+→ *Move on at 10:23*
+
+---
+
+### 10:23–10:35 (12 min) | `VERBAL` — Section 1 Recap + Questions
+
+Recap the three concepts from Section 1 without running new code:
+1. sf = data frame + geometry column (sticky — it travels with filter, select, join)
+2. CRS: 4326 for display, 32735 for measuring
+3. `geom_sf()` is the only new ggplot2 function — everything else is Module 1–10 knowledge
+
+Open floor for questions. Kosam handles individual output or package issues.
+
+If time remains: show slide **What ZICTA's Annual Report Currently Shows** → "This is what we're replacing — a table. With two lines of ggplot2 we now have a map."
+
+---
+
+### 10:35–10:45 | `BREAK` (10 minutes)
+
+---
+
+### 10:45–10:53 (8 min) | `SLIDE` — Spatial Attribute Join + `R` lines 200–217
+
+Show slide: **The Core Pattern: A Spatial Attribute Join**
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 203 | `sort(zmb_provinces$NAME_1)` | "Check GADM's exact spelling. Note: 'North-Western' has a hyphen." |
+| 204 | `sort(coverage$province)` | "Check our CSV spelling. Both vectors must match exactly — 10 names, identical strings." |
+| 208–209 | `left_join(coverage, by = c("NAME_1" = "province"))` | "Same `left_join()` from Module 10. The geometry column stays attached — the sf object survives the join." |
+| 212–215 | validation filter | "Run this. `character(0)` = no mismatches = good. Any names printed here are spelling problems to fix before going further." |
+
+[PAUSE] "What does `character(0)` mean? Why don't we skip this validation step?"
+
+→ *Move on at 10:53*
+
+---
+
+### 10:53–11:03 (10 min) | `SLIDE` — Basic Choropleth + `R` lines 219–231
+
+Show slide: **Basic Choropleth**
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 222–227 | basic choropleth | Run. Wait for the plot to render. Say nothing for 30 seconds — let participants read the map on their own screens. |
+
+[PAUSE — 2 min] "What does this map tell us? Who can describe it in one sentence?"  
+Expected answer: Lusaka and Copperbelt have the highest internet penetration; Western, Muchinga, and Luapula are the lowest. The urban-rural divide is visible at a glance.
+
+→ *Move on at 11:03*
+
+---
+
+### 11:03–11:13 (10 min) | `SLIDE` — Publication-Ready + `R` lines 233–267
+
+Show slides: **Publication-Ready: Labels and Palette Direction** + **Colour Palette Choices**
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 236–242 | centroid calculation block | Run without dwelling. "We compute centroids in UTM for accuracy, then transform back to 4326 for ggplot. Trust the block — the full explanation is in the script comments." |
+| 244–267 | publication-ready map | Run. Show output. "`direction = -1` reverses the palette: darker = lower penetration. Design choice: draw the eye to the problem, not the well-served areas. Always explain palette choices in the caption." |
+
+→ *Move on at 11:13*
+
+---
+
+### 11:13–11:20 (7 min) | `SLIDE` — Faceted Choropleth + `R` lines 279–312
+
+Show slides: **Faceted Choropleth: Comparing Two Indicators** → **Reading the Faceted Map**
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 279–289 | `pivot_longer(...)` block | "Same `pivot_longer()` from earlier modules. The geometry column stays sticky even after pivoting." |
+| 291–303 | faceted ggplot | Run. Show the two-panel map. |
+
+[PAUSE] "Mobile coverage is near-universal. Internet penetration is much lower in rural provinces. What explains the gap?"  
+Discussion prompt: affordability of data bundles, device ownership, digital literacy — these are ZICTA policy questions, not just data observations.
+
+→ *Move on at 11:20*
+
+---
+
+### 11:20–11:23 (3 min) | `SLIDE` — leaflet vs ggplot2 + The leaflet Pipeline
+
+Show slides: **leaflet vs ggplot2** + **The leaflet Pipeline**
+
+"ggplot2 = reports and printed maps. leaflet = exploration and dashboards — they pan, zoom, and respond to clicks. Different syntax: `%>%` pipes, `addXxx()` functions, no `+` signs between layers."
+
+→ *Move on at 11:23*
+
+---
+
+### 11:23–11:32 (9 min) | `SLIDE` — Interactive Choropleth + `R` lines 324–357
+
+Show slide: **Interactive Choropleth with Hover Labels**
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 329–333 | `colorNumeric(...)` | "Build the palette object first — this is leaflet's equivalent of `scale_fill_viridis_c()`. We reference it with `~pal_internet(...)` in the map." |
+| 335–348 | basic leaflet map | Run. Open in Viewer pane. "The `~` (tilde) means 'evaluate this formula on the data'. You'll see it everywhere in leaflet." |
+
+[PAUSE] Zoom into Western province. Compare colour to Lusaka. "Does this match what we saw in the ggplot map?"
+
+→ *Move on at 11:32*
+
+---
+
+### 11:32–11:40 (8 min) | `R` lines 359–393
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 361–385 | hover + popup map | Run. Open in Viewer. "`CartoDB.Positron` = cleaner background than OSM. `highlightOptions()` controls the hover border. `lapply(htmltools::HTML)` tells leaflet to render bold tags in the label." |
+
+[PAUSE] Hover over provinces. "Which province has the widest gap between mobile coverage and internet penetration?"
+
+→ *Move on at 11:40*
+
+---
+
+### 11:40–11:45 (5 min) | `R` lines 395–413 + `VERBAL` — Section 3 Close
+
+| Line(s) | Code | What to say |
+|---------|------|-------------|
+| 399–400 | `st_as_sf(coords = c("longitude", "latitude"), crs = 4326)` | "Critical rule: X before Y — longitude before latitude. Swap them and your points end up in the Atlantic. R does not warn you." |
+| 405–407 | `plot(st_geometry(towers_sf), axes = TRUE); plot(st_geometry(zmb_provinces), add = TRUE)` | "Quick sanity check before building any map: do the points look right geographically?" |
+
+VERBAL: "Lines 449–511 in the live script build the full layered map with operator toggle controls — explore it after the session. Sections 4 and 5 cover spatial joins and the coverage gap analysis, also in the script as reference material."
+
+**Matteo:** "That's the live coding portion. Kosam will now present the capstone, which brings all of this together into a complete analytical output."
+
+---
+
+### 11:45 | Handover to Kosam Chola
+
+Matteo steps back. Kosam takes over at the front.
+
+---
+
+### 11:45–12:30 (45 min) | CAPSTONE PRESENTATION — Kosam Chola
+
+*Delivered as a standalone by Kosam Chola. No group work.*
+
+Suggested structure:
+
+| Time | Content |
+|------|---------|
+| 11:45–11:50 | Introduce the capstone brief: analytical question, data sources, output |
+| 11:50–12:15 | Walk through the full analysis |
+| 12:15–12:25 | Q&A from participants |
+| 12:25–12:30 | Close: key functions slide, Zambia spatial data sources, what comes next |
+
+**Slide references for close:** "Key Functions Reference" + "Zambia Spatial Data Sources" + "What Comes Next"
+
+---
+
+## 3. What to Cut If Running Behind
+
+If a section is running 10–15 minutes late, cut in this priority order:
+
+| Cut this | Time saved | How to handle |
+|----------|-----------|----------------|
+| **Sec 1.2** CRS area demo (lines 136–147) | ~6 min | State the rule verbally — "32735 for measuring, 4326 for display." Point to the lines in the script and move on. |
+| **Sec 2.3** centroid computation detail (lines 236–242) | ~4 min | Run the block without explaining the UTM reproject steps — just say "trust this block" and show the output. |
+| **Sec 2.4** faceted choropleth (lines 279–312) | ~7 min | Show the slide screenshot instead of live coding. Point to lines for self-study. |
+| **Sec 3.2** hover + popup map (lines 359–393) | ~8 min | Show the slide screenshot. Skip live coding of this block entirely. |
+
+**Do not cut:**
+- **Section 2.1 join validation** (lines 212–215) — the diagnostic that prevents silent NAs is a core habit, not optional.
+- **Section 1.3 first map** (lines 167–184) — the payoff moment of Section 1; losing it deflates the session.
+
+---
+
+## 4. Common Technical Problems and Fixes
 
 ### Problem 1: `gadm()` returns a SpatVector, not sf
 
@@ -256,36 +501,6 @@ st_distance(towers_utm, ref_utm)   # now in metres
 
 ---
 
-## 4. Group-Specific Facilitation Notes
-
-### Engineering Group
-- Likely to find the **distance analysis** (Section 4.4) most directly relevant to their work — encourage them to extend it with `st_buffer()` to approximate signal coverage footprints
-- May ask about displaying fibre routes or spectrum boundaries — explain these would be line geometries (`geom_sf()` handles them the same way as polygons)
-- Common question: "Can we use real GPS coordinates from our field teams?" — Yes: any CSV with lat/lon columns works with `st_as_sf(coords = c("longitude", "latitude"), crs = 4326)`
-
-### Statistical Unit
-- Likely to want to extend the faceted choropleth with formal inequality statistics (Gini coefficient, coefficient of variation)
-- Good extension: `summarise(gini = ineq::gini(internet_penetration_pct))` — requires the `ineq` package
-- May want to use district-level data: encourage them to change `level = 1` to `level = 2` in `gadm()` and use `NAME_2` as the join key
-
-### Financial Statistics
-- The compliance score join exercise directly connects to their existing work with `sample_data_telecoms.csv` from earlier modules
-- **Note on telecoms data path:** If they are running from `ZICTA_training/`, they need to adjust the path: `read_csv("../../ZICTA Training 2026/Datasets/Sample data_telecoms.csv")` — or copy the file to the `Datasets/` folder
-- The scatter plot (compliance vs penetration) may generate discussion about causality vs correlation — encourage them to add region labels to the points for context
-
-### Postal Services
-- The USAF project map is operationally relevant to their mandate — encourage them to bring real project data after the session
-- Circle radius proportional to budget (`~sqrt(budget_usd / 10000)`) is a useful pattern to highlight — explain why sqrt() gives more visually proportional circles than raw budget
-- If they finish early: ask them to produce a bar chart of total budget by province to complement the map
-
-### Universal Access
-- The coverage gap analysis (Section 4.3 + capstone) is the most directly actionable output for their team
-- The `underinvested` flag (low penetration AND low USAF investment) can be presented to the group as a draft policy brief
-- Encourage them to discuss the **threshold choices** — why 20% for penetration? Why $500k for USAF? These are policy decisions, not just statistical cutoffs
-- If they have real USAF project coordinates, this code runs unchanged — just substitute the CSV
-
----
-
 ## 5. Adaptation Notes for Future Delivery
 
 ### Updating to Real ZICTA Data
@@ -333,7 +548,7 @@ leaflet(provinces_mapped) |>
 
 Each `leaflet()` call goes inside a chunk in a flexdashboard panel. No additional wrapping is needed — this links directly to the Module 15–16 dashboard skills.
 
-### Adding a Buffer Zone Analysis (Engineering Extension)
+### Adding a Buffer Zone Analysis
 To visualise approximate tower signal coverage footprints:
 
 ```r
