@@ -48,3 +48,9 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 .positai
+
+# Facilitator-only materials (answer keys, slide deck source, facilitation guide)
+Spatial_Session/Facilitator/
+
+# Rendered HTML outputs
+*.html

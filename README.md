@@ -61,7 +61,7 @@ This downloads the full repository — all scripts, slides, and datasets — to 
 cd ZICTA_training
 ls
 ```
-You should see: `Datasets/`, `Modules/`, `Facilitation Guides/`, `README.md`, `ZICTA_training.Rproj`
+You should see: `Datasets/`, `Spatial_Session/`, `README.md`, `ZICTA_training.Rproj`
 
 ---
 
