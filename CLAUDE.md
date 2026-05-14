@@ -23,6 +23,7 @@ ZICTA_training/
 ├── Spatial_Session/
 │   ├── Facilitator/                   ← GITIGNORED — never on GitHub
 │   │   ├── ZICTA_Spatial_Coding_Answer.R   ← answer key
+│   │   ├── ZICTA_Spatial_Student_Test.R    ← student script with blanks filled (run to verify)
 │   │   ├── ZICTA_Geo_Slide_Deck.qmd        ← Quarto revealjs slide deck
 │   │   ├── ZICTA_Geo_Slide_Deck.html       ← rendered slide deck (open in browser)
 │   │   └── Geo_Session_Facilitation_Guide.md
@@ -40,8 +41,9 @@ ZICTA_training/
 
 ## The two-script design
 
-- **`ZICTA_Spatial_Student.R`** — the script Matteo runs live with students. Contains blanks (BLANK A through BLANK G) that students fill in during the session. Section 3.5 and Section 4 (leaflet) are marked as reference material (not covered live).
+- **`ZICTA_Spatial_Student.R`** — the script Matteo runs live with students. Contains blanks (BLANK A through BLANK G) that students fill in during the session. Section 3.5 and Section 4 (leaflet) are marked as reference material (not covered live). Blank hints are intentionally minimal — answers come from the slides, not from adjacent comments.
 - **`ZICTA_Spatial_Coding_Answer.R`** — identical structure to the student script, all blanks filled in. Matteo uses this to follow along and verify answers. Gitignored.
+- **`ZICTA_Spatial_Student_Test.R`** — exact copy of the student script with blanks filled in. Run end-to-end before the session to verify everything works. Gitignored.
 
 There is no separate "live script" — the answer key IS the facilitator's live script.
 
@@ -54,7 +56,7 @@ All three CSVs are synthetic but realistic. Province names are matched to GADM (
 | File | Rows | Key columns | Notes |
 |------|------|-------------|-------|
 | `zicta_coverage_by_province.csv` | 10 | province, internet_penetration_pct, mobile_coverage_pct, broadband_per_100, population_2022 | **"Northwestern" is intentionally misspelled** — should be "North-Western" (GADM uses a hyphen). Taught as a join validation exercise in Section 2.1. |
-| `zicta_towers.csv` | 72 | tower_id, operator, license_type, latitude, longitude, province, district, year_installed | 4 operators: Airtel Zambia, MTN Zambia, ZAMTEL, Liquid Telecom |
+| `zicta_towers.csv` | 72 | tower_id, operator, license_type, latitude, longitude, district, year_installed | 4 operators: Airtel Zambia, MTN Zambia, ZAMTEL, Liquid Telecom. No province column — province is derived via `st_join()` in Section 3. |
 | `zicta_usaf_projects.csv` | 30 | project_id, project_name, province, district, latitude, longitude, budget_usd, start_year, status, target_population | Status: Completed / Ongoing / Planned. Weighted towards underserved provinces. |
 
 ---

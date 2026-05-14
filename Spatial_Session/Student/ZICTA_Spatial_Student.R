@@ -54,8 +54,9 @@ usaf     <- read_csv("Datasets/zicta_usaf_projects.csv")
 #   population_2022. Lusaka leads at 67.8%; Muchinga is lowest at 9.8%.
 #
 # towers   — 72 rows, one per licensed tower. Columns: tower_id, operator,
-#   license_type, latitude, longitude, province, district, year_installed.
+#   license_type, latitude, longitude, district, year_installed.
 #   Four operators: Airtel Zambia, MTN Zambia, ZAMTEL, Liquid Telecom.
+#   No province column — we derive it via spatial join in Section 3.
 #
 # usaf     — 30 rows, one per Universal Access and Service Fund (USAF) project.
 #   Columns: project_id, project_name, province, district, latitude, longitude,
@@ -87,24 +88,22 @@ zmb_provinces %>%
 
 # Check the current CRS
 st_crs(zmb_provinces)
-#> User input: WGS 84    (EPSG:4326 — degrees, for DISPLAY)
 
-# Transform to UTM Zone 35S for Zambia (EPSG:32735 — metres, for MEASURING)
-# We need metres to calculate meaningful distances and areas. Degrees are
-# meaningless for measurement — they vary in size depending on latitude.
+# We need a projected CRS with metre units to calculate meaningful distances
+# and areas. The current CRS uses degrees — meaningless for measurement.
+# Which EPSG code is the right projection for Zambia? (Check the slides!)
 zmb_provinces_utm <- zmb_provinces %>%
-  st_transform(crs = ___)    # ← BLANK A: which EPSG for measuring in Zambia?
+  st_transform(crs = ___)    # ← BLANK A
 
 st_crs(zmb_provinces_utm)$input
-#> [1] "EPSG:32735"
 
 # Demonstrate: why CRS matters for area calculations
 # Wrong CRS = wrong numbers = wrong policy conclusions
 zmb_provinces <- zmb_provinces %>%
   mutate(
-    area_wrong_units = as.numeric(st_area(geometry)) / 1e6,        # degrees² — wrong
+    area_wrong_units = as.numeric(st_area(geometry)) / 1e6,
     area_sqkm        = as.numeric(st_area(
-                         st_transform(geometry, ___)               # ← BLANK B: correct EPSG
+                         st_transform(geometry, ___)               # ← BLANK B
                        )) / 1e6
   )
 
@@ -114,7 +113,6 @@ zmb_provinces %>%
   arrange(desc(area_sqkm))
 
 # [PAUSE] What is the unit of area_wrong_units? What is area_sqkm?
-#         Rule: always st_transform() to EPSG:___ before measuring distances or areas.
 
 # ── 1.3  Your first map ───────────────────────────────────────────────────────
 
@@ -195,24 +193,14 @@ ggplot(provinces_mapped) +
 
 # ── 2.3  Publication-ready map ────────────────────────────────────────────────
 
-# Compute province centroids for labels (UTM for accuracy, then back to 4326)
-province_labels <- zmb_provinces %>%
-  st_transform(32735) %>%
-  mutate(centroid = st_centroid(geometry)) %>%
-  st_drop_geometry() %>%
-  rename(geometry = centroid) %>%
-  st_as_sf(crs = 32735) %>%
-  st_transform(4326)
-
 # direction = -1 reverses the palette: darker = lower penetration.
 # This draws the reader's eye to underserved areas — the policy-relevant
 # provinces — rather than the well-connected ones.
-ggplot() +
-  geom_sf(data  = provinces_mapped,
-          aes(fill = internet_penetration_pct),
+# geom_sf_text() automatically places labels at polygon centroids.
+ggplot(provinces_mapped) +
+  geom_sf(aes(fill = internet_penetration_pct),
           colour = "white", linewidth = 0.4) +
-  geom_sf_text(data  = province_labels,
-               aes(label = NAME_1),
+  geom_sf_text(aes(label = NAME_1),
                size = 2.2, colour = "white", fontface = "bold") +
   scale_fill_viridis_c(
     name      = "Internet\npenetration (%)",
@@ -269,20 +257,16 @@ ggplot(provinces_long) +
 
 # ── 3.1  Convert tower CSV to spatial points ─────────────────────────────────
 
-# Our tower data is a plain CSV with latitude and longitude columns. To use
-# spatial operations (st_join, st_distance, plotting on a map), we need to
-# convert it to an sf object.
-#
-# CRITICAL: coords = c("longitude", "latitude") — X (lon) BEFORE Y (lat).
-# This follows the mathematical convention (x, y). Swapping them places all
-# 72 towers in the southern Atlantic Ocean — and R does NOT warn you.
-# crs = 4326 because these are GPS coordinates (degrees).
+# Our tower data is a plain CSV with coordinate columns. To use spatial
+# operations we need to convert it to an sf object using st_as_sf().
+# Think about: which columns hold the coordinates? In what order?
+# What CRS are raw GPS coordinates in?
 towers_sf <- towers %>%
-  st_as_sf(coords = c("___", "___"), crs = ___)    # ← BLANK G: column names + CRS
+  st_as_sf(coords = ___, crs = ___)                  # ← BLANK G: coords + CRS
 
-# Quick geometry check — points should appear within Zambia
-plot(st_geometry(towers_sf), axes = TRUE)
-plot(st_geometry(zmb_provinces), add = TRUE)
+# Quick sanity check — do points fall inside Zambia?
+plot(st_geometry(zmb_provinces), col = "#f5f5f5", border = "grey60")
+plot(st_geometry(towers_sf), add = TRUE, col = "red", pch = 16, cex = 0.8)
 
 # [PAUSE] Do all 72 towers fall inside Zambia?
 
@@ -290,39 +274,20 @@ plot(st_geometry(zmb_provinces), add = TRUE)
 
 # Unlike left_join (which needs a shared column name), st_join uses geography
 # as the join key — each point inherits the attributes of whichever polygon
-# it falls inside. No shared column needed.
-#
-# We select only the province name from the polygon layer — keeping all GADM
-# columns would add unnecessary metadata to our tower data.
+# it falls inside.
 towers_enriched <- towers_sf %>%
-  st_join(zmb_provinces %>% select(___))             # ← BLANK E: which column to keep?
-
-# Validate: does the province from GPS (spatial join) match the province
-# stated in the CSV? This catches GPS transcription errors in infrastructure
-# registries — a common data quality issue in real ZICTA data.
-towers_enriched %>%
-  st_drop_geometry() %>%
-  select(tower_id, operator, province, NAME_1) %>%
-  mutate(match = province == NAME_1) %>%
-  count(match)
-#> match     n
-#> TRUE     72   ← all 72 towers correctly placed
-
-# [PAUSE] What would it mean if some rows showed match = FALSE?
+  st_join(zmb_provinces %>% select(___))             # ← BLANK E: which column from the polygon layer?
 
 # ── 3.3  Aggregating points to province level ───────────────────────────────
 
-towers_per_province <- towers_enriched %>%
-  st_drop_geometry() %>%
-  count(NAME_1, name = "n_towers") %>%
-  rename(province = NAME_1)
-
-# Provinces with no towers get NA from the join. On a map, NA renders as
-# transparent — the province disappears entirely. We replace NA with the
-# correct value: zero towers.
+# Provinces with no towers get NA from the join. What should the map show
+# for these provinces — nothing, or a meaningful value?
 provinces_towers <- zmb_provinces %>%
-  left_join(towers_per_province, by = c("NAME_1" = "province")) %>%
-  mutate(n_towers = replace_na(n_towers, ___))       # ← BLANK F: what value for missing towers?
+  left_join(
+    towers_enriched %>% st_drop_geometry() %>% count(NAME_1, name = "n_towers"),
+    by = "NAME_1"
+  ) %>%
+  mutate(n_towers = replace_na(n_towers, ___))       # ← BLANK F
 
 ggplot(provinces_towers) +
   geom_sf(aes(fill = n_towers), colour = "white", linewidth = 0.4) +
@@ -374,7 +339,7 @@ lusaka_centroid <- zmb_provinces %>%
   st_centroid() %>%
   st_geometry()
 
-towers_utm <- towers_sf %>%
+towers_utm <- towers_enriched %>%
   st_transform(32735) %>%
   mutate(
     dist_lusaka_km = as.numeric(st_distance(geometry, lusaka_centroid)) / 1000
@@ -382,7 +347,7 @@ towers_utm <- towers_sf %>%
 
 towers_utm %>%
   st_drop_geometry() %>%
-  group_by(province) %>%
+  group_by(NAME_1) %>%
   summarise(avg_dist_km = round(mean(dist_lusaka_km), 0),
             max_dist_km = round(max(dist_lusaka_km), 0)) %>%
   arrange(desc(avg_dist_km))
@@ -457,7 +422,7 @@ leaflet(provinces_mapped) %>%
 # is for continuous data (penetration percentages).
 operator_colours <- colorFactor(
   palette = c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00"),
-  domain  = towers_sf$operator
+  domain  = towers_enriched$operator
 )
 
 leaflet() %>%
@@ -465,7 +430,7 @@ leaflet() %>%
   addPolygons(data = provinces_mapped, fillColor = "transparent",
               color = "grey60", weight = 1) %>%
   addCircleMarkers(
-    data        = towers_sf,
+    data        = towers_enriched,
     radius      = 6,
     color       = ~operator_colours(operator),
     fillColor   = ~operator_colours(operator),
@@ -473,11 +438,11 @@ leaflet() %>%
     stroke      = FALSE,
     popup       = ~paste0(
       "<b>", operator, "</b><br>",
-      district, ", ", province, "<br>",
+      district, ", ", NAME_1, "<br>",
       "Year: ", year_installed
     )
   ) %>%
-  addLegend(pal = operator_colours, values = towers_sf$operator, title = "Operator")
+  addLegend(pal = operator_colours, values = towers_enriched$operator, title = "Operator")
 
 # ── 4.4  Layered map with operator toggles ───────────────────────────────────
 
@@ -490,31 +455,31 @@ leaflet() %>%
     group       = "Internet Penetration"
   ) %>%
   addCircleMarkers(
-    data = towers_sf %>% filter(operator == "Airtel Zambia"),
+    data = towers_enriched %>% filter(operator == "Airtel Zambia"),
     radius = 5, color = "#E41A1C", fillColor = "#E41A1C",
     fillOpacity = 0.9, stroke = FALSE,
-    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", province),
+    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", NAME_1),
     group = "Airtel Zambia"
   ) %>%
   addCircleMarkers(
-    data = towers_sf %>% filter(operator == "MTN Zambia"),
+    data = towers_enriched %>% filter(operator == "MTN Zambia"),
     radius = 5, color = "#377EB8", fillColor = "#377EB8",
     fillOpacity = 0.9, stroke = FALSE,
-    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", province),
+    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", NAME_1),
     group = "MTN Zambia"
   ) %>%
   addCircleMarkers(
-    data = towers_sf %>% filter(operator == "ZAMTEL"),
+    data = towers_enriched %>% filter(operator == "ZAMTEL"),
     radius = 5, color = "#4DAF4A", fillColor = "#4DAF4A",
     fillOpacity = 0.9, stroke = FALSE,
-    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", province),
+    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", NAME_1),
     group = "ZAMTEL"
   ) %>%
   addCircleMarkers(
-    data = towers_sf %>% filter(operator == "Liquid Telecom"),
+    data = towers_enriched %>% filter(operator == "Liquid Telecom"),
     radius = 5, color = "#FF7F00", fillColor = "#FF7F00",
     fillOpacity = 0.9, stroke = FALSE,
-    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", province),
+    popup = ~paste0("<b>", operator, "</b><br>", district, ", ", NAME_1),
     group = "Liquid Telecom"
   ) %>%
   addLayersControl(
